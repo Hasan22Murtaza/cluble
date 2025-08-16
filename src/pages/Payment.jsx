@@ -117,7 +117,6 @@ const Payment = () => {
 
   
   const handlePayment = async () => {
-    console.log('handlePayment', selectedPlanId);
     if (!selectedPlanId) {
       toast({ title: "Erro", description: "Por favor, selecione um plano.", variant: "destructive" });
       return;
@@ -125,6 +124,7 @@ const Payment = () => {
     setLoading(true);
     try {
       const stripe = await stripePromise;
+      console.log('stripe', stripe);
       const { error } = await stripe.redirectToCheckout({
         lineItems: [{ price: selectedPlanId, quantity: 1 }],
         mode: 'subscription',
@@ -221,8 +221,8 @@ const Payment = () => {
                         </motion.div>
                       ))}
                     </div>
-                    <Button onClick={handlePayment} disabled={loading || !selectedPlanId} className="w-full mt-6 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg py-6">
-                      {loading ? 'Aguarde...' : <><Crown className="h-5 w-5 mr-2" />Ativar Premium Agora</>}
+                    <Button onClick={handlePayment}  className="w-full mt-6 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg py-6">
+                    Aguarde
                     </Button>
                     <p className="text-xs text-gray-400 text-center mt-4">Pagamento seguro via Stripe • Cancele quando quiser</p>
                   </CardContent>
