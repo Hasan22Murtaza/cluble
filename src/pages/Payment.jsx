@@ -7,10 +7,10 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Crown, Check, ArrowLeft, Star, Zap } from 'lucide-react';
+import { Crown, Check, ArrowLeft, Star, Zap, CheckCircle } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 
-const stripePromise = loadStripe('pk_live_51RIEIQIWOkw4Rqfdar3ZmxjQ9XolfKQXZRwEtw5WTo6aBy4OnU9CVKGx7WPInk6TgDKwZrDUYZzL2JRoxQV56fVO00QhhEvS8H');
+const stripePromise = loadStripe('pk_test_NpmzCEqr3sj80fn7zlDLLPSx');
 
 const allPlans = {
   BRL: [
@@ -81,11 +81,17 @@ const features = [
 const Payment = () => {
   const [selectedPlanId, setSelectedPlanId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [currentPlans, setCurrentPlans] = useState([]);
+
+  // Debug logging for plan selection
+  useEffect(() => {
+    console.log('Selected plan changed:', selectedPlanId);
+  }, [selectedPlanId]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -117,7 +123,12 @@ const Payment = () => {
 
   const handlePayment = async () => {
     if (!selectedPlanId) {
-      toast({ title: "Erro", description: "Por favor, selecione um plano.", variant: "destructive" });
+      try {
+        toast({ title: "Erro", description: "Por favor, selecione um plano.", variant: "destructive" });
+      } catch (error) {
+        console.error("Toast error:", error);
+        alert("Por favor, selecione um plano.");
+      }
       return;
     }
     setLoading(true);
@@ -132,10 +143,20 @@ const Payment = () => {
       });
 
       if (error) {
-        toast({ title: "Erro no Checkout", description: error.message, variant: "destructive" });
+        try {
+          toast({ title: "Erro no Checkout", description: error.message, variant: "destructive" });
+        } catch (toastError) {
+          console.error("Toast error:", toastError);
+          alert(`Erro no Checkout: ${error.message}`);
+        }
       }
     } catch (error) {
-      toast({ title: "Erro", description: "Não foi possível iniciar o pagamento.", variant: "destructive" });
+      try {
+        toast({ title: "Erro", description: "Não foi possível iniciar o pagamento.", variant: "destructive" });
+      } catch (toastError) {
+        console.error("Toast error:", toastError);
+        alert("Não foi possível iniciar o pagamento.");
+      }
     } finally {
         setLoading(false);
     }
@@ -173,6 +194,17 @@ const Payment = () => {
         </header>
 
         <div className="container mx-auto px-4 py-8">
+          {error && (
+            <div className="max-w-4xl mx-auto mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg">
+              <p className="text-red-400 text-center">{error}</p>
+              <button 
+                onClick={() => setError(null)} 
+                className="mt-2 text-red-300 hover:text-red-100 text-sm"
+              >
+                Fechar
+              </button>
+            </div>
+          )}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }} className="flex justify-center mb-6">
@@ -187,10 +219,40 @@ const Payment = () => {
                 <span className="text-2xl font-bold text-white mb-6 block">Escolha seu plano</span>
                 {currentPlans.length > 0 ? currentPlans.map((plan) => (
                   <motion.div key={plan.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-                    <Card className={`cursor-pointer transition-all glass-effect border-2 ${selectedPlanId === plan.id ? 'border-purple-500 bg-purple-500/10' : 'border-white/20 hover:border-white/40'} ${plan.popular ? 'ring-2 ring-yellow-400' : ''}`} onClick={() => setSelectedPlanId(plan.id)}>
+                    <div 
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        try {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('Plan wrapper clicked:', plan.id, plan.name);
+                          setSelectedPlanId(plan.id);
+                        } catch (error) {
+                          console.error('Error selecting plan:', error);
+                          setError('Erro ao selecionar plano');
+                        }
+                      }}
+                    >
+                      <Card 
+                        className={`transition-all glass-effect border-2 ${selectedPlanId === plan.id ? 'border-purple-500 bg-purple-500/20 shadow-lg shadow-purple-500/25' : 'border-white/20 hover:border-white/40'} ${plan.popular ? 'ring-2 ring-yellow-400' : ''}`} 
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedPlanId(plan.id);
+                          }
+                        }}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`Select ${plan.name} plan`}
+                      >
                       <CardHeader>
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-white">{plan.name}</CardTitle>
+                          <div className="flex items-center gap-2">
+                            <CardTitle className="text-white">{plan.name}</CardTitle>
+                            {selectedPlanId === plan.id && (
+                              <CheckCircle className="h-5 w-5 text-green-400" />
+                            )}
+                          </div>
                           {plan.savings && <div className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${plan.popular ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white' : 'bg-green-500/20 text-green-400'}`}><Star className="h-3 w-3" />{plan.savings}</div>}
                         </div>
                         <CardDescription className="text-gray-300">{plan.description}</CardDescription>
@@ -201,7 +263,8 @@ const Payment = () => {
                           <span className="text-gray-400">{plan.period}</span>
                         </div>
                       </CardContent>
-                    </Card>
+                      </Card>
+                    </div>
                   </motion.div>
                 )) : (
                   <p className="text-white">Carregando planos...</p>
@@ -219,6 +282,13 @@ const Payment = () => {
                         </motion.div>
                       ))}
                     </div>
+                    {selectedPlanId && (
+                      <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                        <p className="text-sm text-green-400 text-center">
+                          Plano selecionado: {currentPlans.find(p => p.id === selectedPlanId)?.name || 'Desconhecido'}
+                        </p>
+                      </div>
+                    )}
                     <Button onClick={handlePayment} disabled={loading || !selectedPlanId} className="w-full mt-6 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg py-6">
                       {loading ? 'Aguarde...' : <><Crown className="h-5 w-5 mr-2" />Ativar Premium Agora</>}
                     </Button>
