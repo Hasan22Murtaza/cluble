@@ -137,7 +137,7 @@ async function createStripePlans() {
     for (const currency of Object.keys(allPlans)) {
       for (const plan of allPlans[currency]) {
         // Create or retrieve product
-        const product = await stripe.products.create({
+        const product = await stripePromise.products.create({
           name: plan.name,
           description: plan.description,
           metadata: {
@@ -161,7 +161,7 @@ async function createStripePlans() {
         }
 
         // Create price
-        const price = await stripe.prices.create({
+        const price = await stripePromise.prices.create({
           unit_amount: Math.round(amount),
           currency: currency.toLowerCase(),
           recurring: {
