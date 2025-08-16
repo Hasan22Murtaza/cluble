@@ -43,7 +43,7 @@ const allPlans = {
   ],
   USD: [
     {
-      id: 'price_1RumtxIXX3E5aU0rshL8A4pq',
+      id: 'prod_SsPBynDhr7v94J',
       name: 'Monthly Plan',
       price: '$19.90',
       period: '/month',
@@ -71,115 +71,6 @@ const allPlans = {
   ]
 };
 
-
-async function createStripePlans() {
-  const allPlans = {
-    BRL: [
-      {
-        id: 'price_1RrjZhIXX3E5aU0rVW9BXGty',
-        name: 'Plano Mensal',
-        price: 'R$ 19,90',
-        period: '/mês',
-        description: 'Acesso completo por 30 dias',
-        popular: false,
-      },
-      {
-        id: 'price_1RrjhjIXX3E5aU0rOPiEY6U1',
-        name: 'Plano Semestral',
-        price: 'R$ 59,00',
-        period: '/6 meses',
-        description: 'Economia e acesso prolongado',
-        popular: true,
-        savings: 'Mais Popular',
-      },
-      {
-        id: 'price_1RrjiUIXX3E5aU0r2khqz1ck',
-        name: 'Plano Anual',
-        price: 'R$ 119,00',
-        period: '/ano',
-        description: 'O melhor custo-benefício',
-        popular: false,
-        savings: 'Melhor Valor',
-      },
-    ],
-    USD: [
-      {
-        id: 'price_1RumtxIXX3E5aU0rshL8A4pq',
-        name: 'Monthly Plan',
-        price: '$19.90',
-        period: '/month',
-        description: 'Full access for 30 days',
-        popular: false,
-      },
-      {
-        id: 'price_1Rumv2IXX3E5aU0rQ8i05wSP',
-        name: 'Semiannual Plan',
-        price: '$59.00',
-        period: '/6 months',
-        description: 'Savings and extended access',
-        popular: true,
-        savings: 'Most Popular',
-      },
-      {
-        id: 'price_1Rumw4IXX3E5aU0rzZgGHsnG',
-        name: 'Annual Plan',
-        price: '$119.00',
-        period: '/year',
-        description: 'The best value',
-        popular: false,
-        savings: 'Best Value',
-      },
-    ],
-  };
-
-  try {
-    // Create products and prices for each currency
-    for (const currency of Object.keys(allPlans)) {
-      for (const plan of allPlans[currency]) {
-        // Create or retrieve product
-        const product = await stripePromise.products.create({
-          name: plan.name,
-          description: plan.description,
-          metadata: {
-            popular: plan.popular.toString(),
-            savings: plan.savings || '',
-          },
-        });
-
-        // Parse price (remove currency symbol and convert to cents)
-        const amount = parseFloat(plan.price.replace(/[^0-9,.]/g, '').replace(',', '.')) * 100;
-
-        // Determine interval and interval_count
-        let interval = 'month';
-        let interval_count = 1;
-        if (plan.period === '/6 meses' || plan.period === '/6 months') {
-          interval = 'month';
-          interval_count = 6;
-        } else if (plan.period === '/ano' || plan.period === '/year') {
-          interval = 'year';
-          interval_count = 1;
-        }
-
-        // Create price
-        const price = await stripePromise.prices.create({
-          unit_amount: Math.round(amount),
-          currency: currency.toLowerCase(),
-          recurring: {
-            interval,
-            interval_count,
-          },
-          product: product.id,
-          nickname: plan.name,
-        });
-
-        console.log(`Created price for ${plan.name}: ${price.id}`);
-      }
-    }
-    console.log('All plans created successfully!');
-  } catch (error) {
-    console.error('Error creating plans:', error);
-  }
-}
 const features = [
   'Chat Ilimitado',
   'Crie Eventos',
@@ -198,7 +89,6 @@ const Payment = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      createStripePlans();
       if (user) {
         const { data, error } = await supabase.from('profiles').select('is_paid, country').eq('id', user.id).single();
         
@@ -225,7 +115,6 @@ const Payment = () => {
     fetchProfile();
   }, [user]);
 
-  
   const handlePayment = async () => {
     if (!selectedPlanId) {
       toast({ title: "Erro", description: "Por favor, selecione um plano.", variant: "destructive" });
@@ -234,7 +123,6 @@ const Payment = () => {
     setLoading(true);
     try {
       const stripe = await stripePromise;
-      console.log('stripe', stripe);
       const { error } = await stripe.redirectToCheckout({
         lineItems: [{ price: selectedPlanId, quantity: 1 }],
         mode: 'subscription',
@@ -331,8 +219,8 @@ const Payment = () => {
                         </motion.div>
                       ))}
                     </div>
-                    <Button onClick={handlePayment}  className="w-full mt-6 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg py-6">
-                    Aguarde
+                    <Button onClick={handlePayment} disabled={loading || !selectedPlanId} className="w-full mt-6 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg py-6">
+                      {loading ? 'Aguarde...' : <><Crown className="h-5 w-5 mr-2" />Ativar Premium Agora</>}
                     </Button>
                     <p className="text-xs text-gray-400 text-center mt-4">Pagamento seguro via Stripe • Cancele quando quiser</p>
                   </CardContent>
