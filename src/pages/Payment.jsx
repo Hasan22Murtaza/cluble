@@ -10,7 +10,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Crown, Check, ArrowLeft, Star, Zap } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 
-const stripePromise = loadStripe('pk_live_51Rmgs1IXX3E5aU0rflJuFxfwWckEZHPRJVA3hA1IJMxSydVMkI09HUjgOlMGbSG9fOQk7fr7RzSBzxemmIzkgBro00sBvIboPm');
+const stripePromise = loadStripe('pk_live_51RIEIQIWOkw4Rqfdar3ZmxjQ9XolfKQXZRwEtw5WTo6aBy4OnU9CVKGx7WPInk6TgDKwZrDUYZzL2JRoxQV56fVO00QhhEvS8H');
 
 const allPlans = {
   BRL: [
@@ -115,7 +115,9 @@ const Payment = () => {
     fetchProfile();
   }, [user]);
 
+  
   const handlePayment = async () => {
+    console.log('handlePayment', selectedPlanId);
     if (!selectedPlanId) {
       toast({ title: "Erro", description: "Por favor, selecione um plano.", variant: "destructive" });
       return;
